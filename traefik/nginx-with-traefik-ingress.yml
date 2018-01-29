@@ -28,3 +28,18 @@ spec:
         image: harbor.pks.pcf.pw/demo/nginx-ubuntu:1.2
         ports:
         - containerPort: 80
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: nginx
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - host: nginx.cluster2.pks.pcf.pw
+    http:
+      paths:
+      - backend:
+          serviceName: nginx
+          servicePort: 80

@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: ldap-server
+  name: ldap-server
+spec:
+  ports:
+    - port: 10389
+  selector:
+    app: ldap-server
+  type: LoadBalancer
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ldap-server
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ldap-server
+    spec:
+      containers:
+      - name: ldap-server
+        image: kwart/ldap-server
+        ports:
+        - containerPort: 10389
