@@ -15,6 +15,7 @@ usage () {
 	echo "  -n    GCP Network where your K8s cluster has been deployed"
 	echo "  -z    Name of the GCP DNS Zone you created for PKS"
 	echo "  -d    Wildcard DNS name for the cluster (without the *.)"
+	echo "  -a    DNS entry for K8s cluster API"
 	echo "  -f    Prefix for the firewall rules being created"
 	echo "  -c    Name of cluster created by the PKS cli"
 	echo ""
