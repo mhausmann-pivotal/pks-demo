@@ -2,7 +2,7 @@
 # Script to create load balancers and firewall rules for K8s created by PKS
 # Author: Alex Guedes <aguedes@pivotal.io>
 
-SCRIPT_VERSION="0.1"
+SCRIPT_VERSION="0.2"
 
 usage () {
 	echo "Script to create load balancers and firewall rules for K8s created by PKS.";
@@ -49,7 +49,7 @@ fi
 echo "Creating Load Balancer for Masters..."
 gcloud --project=${GCP_PROJECT_ID} compute addresses create ${PKS_CLUSTER_NAME}-api-ip --region ${GCP_REGION}
 gcloud --project=${GCP_PROJECT_ID} compute target-pools create ${PKS_CLUSTER_NAME}-api-lb --region ${GCP_REGION}
-gcloud --project=${GCP_PROJECT_ID} compute target-pools add-instances ${PKS_CLUSTER_NAME}-api-lb --instances=`gcloud compute instances list --filter="-tags = deployment service-instance-$(pks show-cluster ${PKS_CLUSTER_NAME} | grep UUID | awk '{print $2}') AND -tags = job master" --uri | tr '\n' ','`
+gcloud --project=${GCP_PROJECT_ID} compute target-pools add-instances ${PKS_CLUSTER_NAME}-api-lb --instances=`gcloud --project=${GCP_PROJECT_ID} compute instances list --filter="-tags = deployment service-instance-$(pks show-cluster ${PKS_CLUSTER_NAME} | grep UUID | awk '{print $2}') AND -tags = job master" --uri | tr '\n' ','`
 gcloud --project=${GCP_PROJECT_ID} compute forwarding-rules create ${PKS_CLUSTER_NAME}-api-forwarding-rule --region ${GCP_REGION} --ports 8443 --address ${PKS_CLUSTER_NAME}-api-ip --target-pool ${PKS_CLUSTER_NAME}-api-lb
 echo -e "\nCreating DNS entry for Masters Load Balancer..."
 rm -f transaction.yaml
@@ -63,7 +63,7 @@ echo -e "Masters configured!\n"
 echo "Creating Load Balancer for Wokers..."
 gcloud --project=${GCP_PROJECT_ID} compute addresses create ${PKS_CLUSTER_NAME}-workers-ip --region ${GCP_REGION}
 gcloud --project=${GCP_PROJECT_ID} compute target-pools create ${PKS_CLUSTER_NAME}-workers-lb --region ${GCP_REGION}
-gcloud --project=${GCP_PROJECT_ID} compute target-pools add-instances ${PKS_CLUSTER_NAME}-workers-lb --instances=`gcloud compute instances list --filter="-tags = deployment service-instance-$(pks show-cluster ${PKS_CLUSTER_NAME} | grep UUID | awk '{print $2}') AND -tags = job worker" --uri | tr '\n' ','`
+gcloud --project=${GCP_PROJECT_ID} compute target-pools add-instances ${PKS_CLUSTER_NAME}-workers-lb --instances=`gcloud --project=${GCP_PROJECT_ID} compute instances list --filter="-tags = deployment service-instance-$(pks show-cluster ${PKS_CLUSTER_NAME} | grep UUID | awk '{print $2}') AND -tags = job worker" --uri | tr '\n' ','`
 gcloud --project=${GCP_PROJECT_ID} compute forwarding-rules create ${PKS_CLUSTER_NAME}-workers-forwarding-rule --region ${GCP_REGION} --ports 1-65535 --address ${PKS_CLUSTER_NAME}-workers-ip --target-pool ${PKS_CLUSTER_NAME}-workers-lb
 echo -e "\nCreating DNS entry for Wokers Load Balancer..."
 rm -f transaction.yaml
