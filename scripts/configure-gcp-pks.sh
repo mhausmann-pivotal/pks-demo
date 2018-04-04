@@ -59,18 +59,18 @@ gcloud --project=${GCP_PROJECT_ID} dns record-sets transaction execute --zone="$
 echo -e "\nCreating firewall rules for Masters (this might fail if rule already exists, but this is fine - it will update instead)..."
 if gcloud --project=${GCP_PROJECT_ID} compute firewall-rules create ${PREFIX_FW_RULES}-allow-k8s-api --allow tcp:8443 --network ${GCP_NETWORK_NAME} --source-ranges 0.0.0.0/0 --target-tags service-instance-$(pks show-cluster ${PKS_CLUSTER_NAME} | grep UUID | awk '{print $2}')-master; then echo "Firewall rule created."; else gcloud --project=${GCP_PROJECT_ID} compute firewall-rules update ${PREFIX_FW_RULES}-allow-k8s-api --target-tags `gcloud --project=${GCP_PROJECT_ID} compute firewall-rules describe ${PREFIX_FW_RULES}-allow-k8s-api --format json | jq -r '.targetTags | join(",")'`,service-instance-$(pks show-cluster ${PKS_CLUSTER_NAME} | grep UUID | awk '{print $2}')-master && echo "Creation of firewall rule failed because it already existed. Updated instead."; fi
 echo -e "Masters configured!\n"
-# Create Wokers Load Balancer, DNS entries and FW rules
-echo "Creating Load Balancer for Wokers..."
+# Create Workers Load Balancer, DNS entries and FW rules
+echo "Creating Load Balancer for Workers..."
 gcloud --project=${GCP_PROJECT_ID} compute addresses create ${PKS_CLUSTER_NAME}-workers-ip --region ${GCP_REGION}
 gcloud --project=${GCP_PROJECT_ID} compute target-pools create ${PKS_CLUSTER_NAME}-workers-lb --region ${GCP_REGION}
 gcloud --project=${GCP_PROJECT_ID} compute target-pools add-instances ${PKS_CLUSTER_NAME}-workers-lb --instances=`gcloud --project=${GCP_PROJECT_ID} compute instances list --filter="-tags = deployment service-instance-$(pks show-cluster ${PKS_CLUSTER_NAME} | grep UUID | awk '{print $2}') AND -tags = job worker" --uri | tr '\n' ','`
 gcloud --project=${GCP_PROJECT_ID} compute forwarding-rules create ${PKS_CLUSTER_NAME}-workers-forwarding-rule --region ${GCP_REGION} --ports 1-65535 --address ${PKS_CLUSTER_NAME}-workers-ip --target-pool ${PKS_CLUSTER_NAME}-workers-lb
-echo -e "\nCreating DNS entry for Wokers Load Balancer..."
+echo -e "\nCreating DNS entry for Workers Load Balancer..."
 rm -f transaction.yaml
 gcloud --project=${GCP_PROJECT_ID} dns record-sets transaction start --zone="${GCP_DNS_ZONE}"
 gcloud --project=${GCP_PROJECT_ID} dns record-sets transaction add --zone="${GCP_DNS_ZONE}" --name="*.${DNS_NAME}." --ttl=300 --type=A `gcloud --project=${GCP_PROJECT_ID} compute addresses list --filter="${PKS_CLUSTER_NAME}-workers-ip" | awk 'FNR == 2 {print $3}'`
 gcloud --project=${GCP_PROJECT_ID} dns record-sets transaction execute --zone="${GCP_DNS_ZONE}"
 echo -e "\nCreating firewall rules for Workers (this might fail if rule already exists, but this is fine - it will update instead)..."
 if gcloud --project=${GCP_PROJECT_ID} compute firewall-rules create ${PREFIX_FW_RULES}-allow-k8s-workers --allow tcp:1-65535 --network ${GCP_NETWORK_NAME} --source-ranges 0.0.0.0/0 --target-tags service-instance-$(pks show-cluster ${PKS_CLUSTER_NAME} | grep UUID | awk '{print $2}')-worker; then echo "Firewall rule created."; else gcloud --project=${GCP_PROJECT_ID} compute firewall-rules update ${PREFIX_FW_RULES}-allow-k8s-workers --target-tags `gcloud --project=${GCP_PROJECT_ID} compute firewall-rules describe ${PREFIX_FW_RULES}-allow-k8s-workers --format json | jq -r '.targetTags | join(",")'`,service-instance-$(pks show-cluster ${PKS_CLUSTER_NAME} | grep UUID | awk '{print $2}')-worker && echo "Creation of firewall rule failed because it already existed. Updated instead."; fi
-echo -e "Wokers configured!\n"
+echo -e "Workers configured!\n"
 echo "Finished."
